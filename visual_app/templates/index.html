@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice AI Chatbot - Index</title>
+</head>
+<body>
+  <h1>Helen</h1>
+  <form action="/logout" method="post">
+    <button type="submit">Logout</button>
+  </form>
+  <!-- Navigation Buttons -->
+  <button onclick="navigate('/home')">Home</button>
+  <button onclick="navigate('/modules')">Modules</button>
+  <button onclick="navigate('/about')">About</button>
+  <button onclick="navigate('/contact')">Contact</button>
+  
+  <script>
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.start();
+
+    recognition.addEventListener('result', event => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+      handleCommand(transcript.toLowerCase());
+    });
+
+    recognition.addEventListener('end', recognition.start);
+
+    async function handleCommand(command) {
+      const response = await fetch('/command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command: command }),
+      });
+      const result = await response.json();
+      
+      if (result.action === 'navigate') {
+        window.location.href = result.url;
+      } else if (result.action === 'response'){
+        speak(result.message);
+      } else if (result.action === 'refresh') {
+        window.location.reload();
+      }
+
+      if (result.action === 'navigate') {
+        window.location.href = result.url;
+      } else if (result.action === 'response') {
+        speak(result.message);
+      }
+    }
+
+    function speak(message) {
+      const speech = new SpeechSynthesisUtterance(message);
+      speechSynthesis.speak(speech);
+    }
+
+    function navigate(page) {
+      fetch('/command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command: page }),
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.action === 'navigate') {
+          window.location.href = result.url;
+        } else if (result.action === 'response') {
+          speak(result.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error navigating:', error);
+        // Handle error as needed
+      });
+    }
+    document.querySelector('form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      fetch('/logout', { method: 'POST' })
+        .then(response => {
+          if (response.redirected) {
+            window.location.href = response.url;  // Redirect to login page
+          }
+        })
+        .catch(error => console.error('Error logging out:', error));
+    });
+
+    // Ensure speechSynthesis is ready before triggering greetings
+window.addEventListener('load', () => {
+  if ('speechSynthesis' in window) {
+    speak('Welcome to helen. How can I assist you today?...... You can navigate through the pages by saying , Home , Modules , about us , contact us');
+  } else {
+    console.warn('SpeechSynthesis not supported.');
+  }
+});
+
+function speak(message) {
+  if (window.speechSynthesis && !window.speechSynthesis.speaking) {
+    const speech = new SpeechSynthesisUtterance(message);
+    window.speechSynthesis.speak(speech);
+  }
+}
+
+  </script>
+</body>
+</html>

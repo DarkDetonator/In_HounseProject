@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Page</title>
+</head>
+<body>
+  <h1>Home Page</h1>
+  <button onclick="navigate('/modules')">Modules</button>
+  <button onclick="navigate('/about')">About</button>
+  <button onclick="navigate('/contact')">Contact</button>
+<!-- Chatbot container -->
+<div id="chatbot-container" style="position: fixed; bottom: 0; right: 0; width: 300px; height: 400px; background: white; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); display: none; flex-direction: column;">
+  <div id="chatbot-header" style="background: #007BFF; color: white; padding: 10px; cursor: pointer;">Helen - Chatbot</div>
+  <div id="chatbot-body" style="flex: 1; padding: 10px; overflow-y: auto;"></div>
+  <div id="chatbot-input" style="border-top: 1px solid #ccc; padding: 10px;">
+      <input type="text" id="chatbot-message" placeholder="Type your message..." style="width: calc(100% - 22px); padding: 5px;">
+  </div>
+</div>
+
+<!-- Toggle button for chatbot -->
+<button id="chatbot-toggle" style="position: fixed; bottom: 10px; right: 10px; background: #007BFF; color: white; border: none; padding: 10px; cursor: pointer;">Chat with Helen</button>
+
+<!-- Voice command button -->
+<button id="voice-command" style="position: fixed; bottom: 50px; right: 10px; background: #FF5733; color: white; border: none; padding: 10px; cursor: pointer;">Start Voice Command</button>
+
+<script>
+  const chatbotContainer = document.getElementById('chatbot-container');
+  const chatbotToggle = document.getElementById('chatbot-toggle');
+  const chatbotHeader = document.getElementById('chatbot-header');
+  const chatbotBody = document.getElementById('chatbot-body');
+  const chatbotMessage = document.getElementById('chatbot-message');
+  const voiceCommandBtn = document.getElementById('voice-command');
+
+  // Text-to-speech function
+  function speak(text) {
+      const speech = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(speech);
+  }
+
+  // Voice recognition setup
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = async (event) => {
+      const command = event.results[0][0].transcript.toLowerCase();
+      chatbotBody.innerHTML += `<div>You: ${command}</div>`;
+
+      // If the command is 'Helen', show the chatbot
+      if (command.includes('helen')) {
+          chatbotContainer.style.display = 'flex';
+          speak("Hi, how can I help you?");
+      } else {
+          // Send command to the backend
+          const response = await fetch('/chat', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ word: command })
+          });
+          const data = await response.json();
+          chatbotBody.innerHTML += `<div>Helen: ${data.response}</div>`;
+          speak(data.response);
+          chatbotBody.scrollTop = chatbotBody.scrollHeight;
+      }
+  };
+
+  recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+  };
+
+  voiceCommandBtn.addEventListener('click', () => {
+      recognition.start();
+  });
+
+  chatbotToggle.addEventListener('click', () => {
+      chatbotContainer.style.display = chatbotContainer.style.display === 'none' ? 'flex' : 'none';
+  });
+
+  chatbotHeader.addEventListener('click', () => {
+      chatbotContainer.style.display = 'none';
+  });
+
+  chatbotMessage.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+          const message = chatbotMessage.value;
+          chatbotBody.innerHTML += `<div>You: ${message}</div>`;
+          chatbotMessage.value = '';
+
+          const response = await fetch('/chat', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ word: message })
+          });
+          const data = await response.json();
+          chatbotBody.innerHTML += `<div>Helen: ${data.response}</div>`;
+          speak(data.response);
+          chatbotBody.scrollTop = chatbotBody.scrollHeight;
+      }
+  });
+</script>
+
+  <script>
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.start();
+
+    recognition.addEventListener('result', event => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+      handleCommand(transcript.toLowerCase());
+    });
+
+    recognition.addEventListener('end', recognition.start);
+
+    async function handleCommand(command) {
+      const response = await fetch('/command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command: command, page: 'home' }),
+      });
+      const result = await response.json();
+
+      if (result.action === 'navigate') {
+        window.location.href = result.url;
+      } else if (result.action === 'response') {
+        speak(result.message);
+      } else if (result.action === 'refresh') {
+        window.location.reload();
+      }
+    }
+
+    function speak(message) {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+      const speech = new SpeechSynthesisUtterance(message);
+      speechSynthesis.speak(speech);
+    }
+
+    function navigate(url) {
+      window.location.href = url;
+    }
+
+    // Trigger initial greeting
+    window.addEventListener('load', () => {
+      speak('You are on the home page. How can I help you?');
+    });
+  </script>
+</body>
+</html>

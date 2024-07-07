@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us</title>
+</head>
+<body>
+  <h1>About Us</h1>
+  <script>
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.start();
+
+    recognition.addEventListener('result', event => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+      handleCommand(transcript.toLowerCase());
+    });
+
+    recognition.addEventListener('end', recognition.start);
+
+    async function handleCommand(command) {
+      const response = await fetch('/command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command: command }),
+      });
+      const result = await response.json();
+
+      if (result.action === 'navigate') {
+        window.location.href = result.url;
+      } else if (result.action === 'response') {
+        speak(result.message);
+      }
+    }
+
+    function speak(message) {
+      const speech = new SpeechSynthesisUtterance(message);
+      speechSynthesis.speak(speech);
+    }
+
+    // Trigger initial greeting
+    window.addEventListener('load', () => {
+      speak('You are on the about page. How can I help you?');
+    });
+  </script>
+</body>
+</html>
