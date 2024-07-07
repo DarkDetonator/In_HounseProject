@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up Page</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    text-align: center;
+    padding: 20px;
+  }
+  .container {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  h2 {
+    color: #333333;
+  }
+  label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  input[type="radio"] {
+    margin: 10px;
+  }
+  input[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  input[type="submit"]:hover {
+    background-color: #45a049;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Sign Up</h2>
+  <form action="{{ url_for('signup') }}" method="post">
+    <label for="newUsername">Username</label>
+    <input type="text" id="newUsername" name="newUsername" required>
+
+    <label for="newEmail">Email</label>
+    <input type="email" id="newEmail" name="newEmail" required>
+
+    <label for="newPassword">Password</label>
+    <input type="password" id="newPassword" name="newPassword" minlength="8" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+    title="Password must contain at least one number, one lowercase letter, one uppercase letter, and be at least 8 characters long" required>
+
+    <label for="confirmPassword">Confirm Password</label>
+    <input type="password" id="confirmPassword" name="confirmPassword" minlength="8" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+    title="Password must contain at least one number, one lowercase letter, one uppercase letter, and be at least 8 characters long" required>
+
+    <label>Choose your preferred website version:</label>
+    <input type="radio" id="visuallyOriented" name="websiteVersion" value="visual" required>
+    <label for="visuallyOriented">Visually-Oriented</label>
+    <input type="radio" id="cognitivelyOriented" name="websiteVersion" value="cognitive" required>
+    <label for="cognitivelyOriented">Cognitively-Oriented</label>
+
+    <input type="submit" value="Sign Up">
+  </form>
+  <p>Already have an account? <a href="{{ url_for('login') }}">Log in here</a>.</p>
+</div>
+</body>
+</html>
